@@ -1,2 +1,6 @@
 # bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
 bazil.org/fuse
+bazil.org/fuse/fs
+bazil.org/fuse/fuseutil
+# golang.org/x/net v0.0.0-20190326090315-15845e8f865b
+golang.org/x/net/context

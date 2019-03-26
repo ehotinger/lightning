@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"bazil.org/fuse"
+	fuseFS "bazil.org/fuse/fs"
+	lightningFS "github.com/ehotinger/lightning/fs"
 )
 
 const (
@@ -31,11 +33,25 @@ func main() {
 	}
 	defer c.Close()
 	defer fuse.Unmount(mntPoint)
+
+	ltFS, err := lightningFS.NewLightningFS()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = fuseFS.Serve(c, ltFS)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	<-c.Ready
+	if err := c.MountError; err != nil {
+		log.Fatal(err)
+	}
 }
 
 func printUsage() {
 	fmt.Fprintf(os.Stderr, "Usage:\n")
 	fmt.Fprintf(os.Stderr, "  %s <MOUNT_POINT> (defaults to %s)\n", os.Args[0], defaultMntPoint)
 	flag.PrintDefaults()
-
 }
