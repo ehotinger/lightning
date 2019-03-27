@@ -1,4 +1,4 @@
-# lightning
+# lightningfs
 
 [![Build Status](https://travis-ci.com/ehotinger/lightningfs.svg?branch=master)](https://travis-ci.com/ehotinger/lightningfs)
 
