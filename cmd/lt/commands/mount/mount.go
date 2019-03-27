@@ -7,7 +7,9 @@ import (
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
+	"github.com/Azure/azure-storage-blob-go/azblob"
 	lightningFS "github.com/ehotinger/lightningfs/fs"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -21,17 +23,38 @@ var Command = cli.Command{
 	Usage: "perform a mount",
 	Action: func(context *cli.Context) error {
 		var (
-			mntPoint = context.Args().First()
-			debug    = context.Bool("debug")
+			mntPoint    = context.Args().First()
+			debug       = context.Bool("debug")
+			accountName = context.String("account-name")
+			accountKey  = context.String("account-key")
 		)
 		if mntPoint == "" {
 			mntPoint = defaultMntPoint
+		}
+
+		if accountName == "" {
+			return errors.New("account name is required")
+		}
+
+		if accountKey == "" {
+			return errors.New("account key is required")
+		}
+
+		// TODO: SAS support
+		credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to create shared key credential")
 		}
 
 		if debug {
 			fuse.Debug = func(msg interface{}) {
 				log.Println(msg)
 			}
+		}
+
+		ltFS, err := lightningFS.NewLightningFS(credential)
+		if err != nil {
+			return err
 		}
 
 		fmt.Fprintf(os.Stdout, "Using %s as the mount point\n", mntPoint)
@@ -43,21 +66,12 @@ var Command = cli.Command{
 		defer c.Close()
 		defer fuse.Unmount(mntPoint)
 
-		ltFS, err := lightningFS.NewLightningFS()
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		err = fuseFS.Serve(c, ltFS)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		<-c.Ready
-		if err := c.MountError; err != nil {
-			log.Fatal(err)
-		}
-
-		return nil
+		return c.MountError
 	},
 }

@@ -5,13 +5,17 @@ import (
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
+	"github.com/Azure/azure-storage-blob-go/azblob"
 )
 
 type LightningFS struct {
+	credential azblob.Credential
 }
 
-func NewLightningFS() (*LightningFS, error) {
-	return &LightningFS{}, nil
+func NewLightningFS(credential azblob.Credential) (*LightningFS, error) {
+	return &LightningFS{
+		credential: credential,
+	}, nil
 }
 
 //

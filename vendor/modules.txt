@@ -2,6 +2,12 @@
 bazil.org/fuse
 bazil.org/fuse/fs
 bazil.org/fuse/fuseutil
+# github.com/Azure/azure-pipeline-go v0.1.8
+github.com/Azure/azure-pipeline-go/pipeline
+# github.com/Azure/azure-storage-blob-go v0.0.0-20190123011202-457680cc0804
+github.com/Azure/azure-storage-blob-go/azblob
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli
 # golang.org/x/net v0.0.0-20190326090315-15845e8f865b
