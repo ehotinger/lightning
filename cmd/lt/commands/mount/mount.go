@@ -35,6 +35,14 @@ var Command = cli.Command{
 			Name:  "account-key",
 			Usage: "Azure Blob account key",
 		},
+		cli.StringFlag{
+			Name:  "cache-path",
+			Usage: "The location of the disk cache",
+		},
+		cli.StringFlag{
+			Name:  "config-file",
+			Usage: "The location of the configuration file",
+		},
 	},
 	Action: func(context *cli.Context) error {
 		var (
@@ -42,7 +50,13 @@ var Command = cli.Command{
 			debug       = context.Bool("debug")
 			accountName = context.String("account-name")
 			accountKey  = context.String("account-key")
+			cachePath   = context.String("cache-path")
+			configFile  = context.String("config-file")
 		)
+
+		_ = cachePath  // TODO: implement caching
+		_ = configFile // TODO: implement file-based configuration for credentials
+
 		if mntPoint == "" {
 			mntPoint = defaultMntPoint
 		}

@@ -24,8 +24,13 @@ func NewLightningFS(credential azblob.Credential) (*LightningFS, error) {
 
 // Root is called to obtain the Node for the file system root.
 func (fs *LightningFS) Root() (fuseFS.Node, error) {
-	// type FS interface {
-	return nil, nil
+	return &Blob{
+		credential: fs.credential,
+	}, nil
+}
+
+type Blob struct {
+	credential azblob.Credential
 }
 
 // Statfs is called to obtain file system metadata.
@@ -83,8 +88,6 @@ func (fs *LightningFS) GenerateInode(parentInode uint64, name string) uint64 {
 // Node will get a new NodeID, causing spurious cache invalidations,
 // extra lookups and aliasing anomalies. This may not matter for a
 // simple, read-only filesystem.
-
-type Blob struct{}
 
 // Attr fills attr with the standard metadata for the node.
 //
