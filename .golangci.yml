@@ -16,7 +16,6 @@ linters:
     - golint
     - gosec
     - govet
-    - ineffassign
     - maligned
     - staticcheck
     - structcheck

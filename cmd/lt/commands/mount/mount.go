@@ -8,6 +8,7 @@ import (
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/ehotinger/lightningfs/config"
 	lightningFS "github.com/ehotinger/lightningfs/fs"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -53,9 +54,15 @@ var Command = cli.Command{
 			cachePath   = context.String("cache-path")
 			configFile  = context.String("config-file")
 		)
+		config, err := config.NewConfigFromFile(configFile)
+		if err != nil {
+			return err
+		}
+		accountName = config.AzureAccountName
+		accountKey = config.AzureAccountKey
+		cachePath = config.CachePath
 
-		_ = cachePath  // TODO: implement caching
-		_ = configFile // TODO: implement file-based configuration for credentials
+		_ = cachePath // TODO: implement caching
 
 		if mntPoint == "" {
 			mntPoint = defaultMntPoint

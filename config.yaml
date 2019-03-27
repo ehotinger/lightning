@@ -1,0 +1,4 @@
+# This is an example configuration file for lightningfs.
+accountName: ""
+accountKey: ""
+cachePath: ""
