@@ -2,5 +2,7 @@
 bazil.org/fuse
 bazil.org/fuse/fs
 bazil.org/fuse/fuseutil
+# github.com/urfave/cli v1.20.0
+github.com/urfave/cli
 # golang.org/x/net v0.0.0-20190326090315-15845e8f865b
 golang.org/x/net/context
