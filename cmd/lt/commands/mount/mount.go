@@ -19,8 +19,24 @@ const (
 
 // Command performs a mount.
 var Command = cli.Command{
-	Name:  "mount",
-	Usage: "perform a mount",
+	Name:      "mount",
+	Usage:     "perform a mount",
+	ArgsUsage: "[mount]",
+	Flags: []cli.Flag{
+		// Build options
+		cli.BoolFlag{
+			Name:  "debug",
+			Usage: "Enable debug mode",
+		},
+		cli.StringFlag{
+			Name:  "account-name",
+			Usage: "Azure Blob account name",
+		},
+		cli.StringFlag{
+			Name:  "account-key",
+			Usage: "Azure Blob account key",
+		},
+	},
 	Action: func(context *cli.Context) error {
 		var (
 			mntPoint    = context.Args().First()
