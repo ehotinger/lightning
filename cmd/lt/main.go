@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	mountCmd "github.com/ehotinger/lightning/cmd/lt/commands/mount"
-	versionCmd "github.com/ehotinger/lightning/cmd/lt/commands/version"
-	"github.com/ehotinger/lightning/version"
+	mountCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/mount"
+	versionCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/version"
+	"github.com/ehotinger/lightningfs/version"
 	"github.com/urfave/cli"
 )
 

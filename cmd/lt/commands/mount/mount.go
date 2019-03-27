@@ -7,7 +7,7 @@ import (
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
-	lightningFS "github.com/ehotinger/lightning/fs"
+	lightningFS "github.com/ehotinger/lightningfs/fs"
 	"github.com/urfave/cli"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/ehotinger/lightning/version"
+	"github.com/ehotinger/lightningfs/version"
 	"github.com/urfave/cli"
 )
 

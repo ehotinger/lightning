@@ -1,4 +1,4 @@
-module github.com/ehotinger/lightning
+module github.com/ehotinger/lightningfs
 
 go 1.12
 
