@@ -30,7 +30,7 @@ var Command = cli.Command{
 
 		if debug {
 			fuse.Debug = func(msg interface{}) {
-				log.Println("[]", msg)
+				log.Println(msg)
 			}
 		}
 
