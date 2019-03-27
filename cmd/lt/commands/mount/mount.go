@@ -7,7 +7,6 @@ import (
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
-	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/ehotinger/lightningfs/config"
 	lightningFS "github.com/ehotinger/lightningfs/fs"
 	"github.com/pkg/errors"
@@ -37,6 +36,10 @@ var Command = cli.Command{
 			Usage: "Azure Blob account key",
 		},
 		cli.StringFlag{
+			Name:  "container-name",
+			Usage: "Azure Blob container name",
+		},
+		cli.StringFlag{
 			Name:  "cache-path",
 			Usage: "The location of the disk cache",
 		},
@@ -47,20 +50,30 @@ var Command = cli.Command{
 	},
 	Action: func(context *cli.Context) error {
 		var (
-			mntPoint    = context.Args().First()
-			debug       = context.Bool("debug")
-			accountName = context.String("account-name")
-			accountKey  = context.String("account-key")
-			cachePath   = context.String("cache-path")
-			configFile  = context.String("config-file")
+			mntPoint   = context.Args().First()
+			debug      = context.Bool("debug")
+			configFile = context.String("config-file")
+
+			accountName   string
+			accountKey    string
+			containerName string
+			cachePath     string
 		)
-		config, err := config.NewConfigFromFile(configFile)
-		if err != nil {
-			return err
+
+		var cfg *config.Config
+		if configFile == "" {
+			var err error
+			cfg, err = config.NewConfigFromFile(configFile)
+			if err != nil {
+				return err
+			}
+		} else {
+			accountName = context.String("account-name")
+			accountKey = context.String("account-key")
+			containerName = context.String("container-name")
+			cachePath = context.String("cache-path")
+			cfg = config.NewConfig(accountName, accountKey, containerName, cachePath)
 		}
-		accountName = config.AzureAccountName
-		accountKey = config.AzureAccountKey
-		cachePath = config.CachePath
 
 		_ = cachePath // TODO: implement caching
 
@@ -71,15 +84,8 @@ var Command = cli.Command{
 		if accountName == "" {
 			return errors.New("account name is required")
 		}
-
 		if accountKey == "" {
 			return errors.New("account key is required")
-		}
-
-		// TODO: SAS support
-		credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
-		if err != nil {
-			return errors.Wrap(err, "failed to create shared key credential")
 		}
 
 		if debug {
@@ -88,7 +94,7 @@ var Command = cli.Command{
 			}
 		}
 
-		ltFS, err := lightningFS.NewLightningFS(credential)
+		ltFS, err := lightningFS.NewLightningFS(cfg)
 		if err != nil {
 			return err
 		}

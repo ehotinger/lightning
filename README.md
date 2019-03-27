@@ -4,7 +4,7 @@
 
 ## About
 
-Don't use this repository yet. Mind the dust.
+Don't use this repository yet. This is mostly a playground for experimentation. Mind the dust and watch out for falling objects.
 
 ## Bazil
 

@@ -2,19 +2,43 @@ package fs
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/ehotinger/lightningfs/config"
+	"github.com/pkg/errors"
+)
+
+const (
+	blobFmt = "https://%s.blob.core.windows.net/%s"
 )
 
 type LightningFS struct {
-	credential azblob.Credential
+	containerURL azblob.ContainerURL
 }
 
-func NewLightningFS(credential azblob.Credential) (*LightningFS, error) {
+func NewLightningFS(config *config.Config) (*LightningFS, error) {
+	// TODO: SAS support
+	credential, err := azblob.NewSharedKeyCredential(config.AzureAccountName, config.AzureAccountKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create shared key credential")
+	}
+
+	p := azblob.NewPipeline(credential, azblob.PipelineOptions{
+		Retry: azblob.RetryOptions{}, // TODO: retries
+	})
+
+	cURL, err := url.Parse(fmt.Sprintf(blobFmt, config.AzureAccountName, config.ContainerName))
+	if err != nil {
+		return nil, err
+	}
+	containerURL := azblob.NewContainerURL(*cURL, p)
+
 	return &LightningFS{
-		credential: credential,
+		containerURL: containerURL,
 	}, nil
 }
 
@@ -25,12 +49,12 @@ func NewLightningFS(credential azblob.Credential) (*LightningFS, error) {
 // Root is called to obtain the Node for the file system root.
 func (fs *LightningFS) Root() (fuseFS.Node, error) {
 	return &Blob{
-		credential: fs.credential,
+		containerURL: fs.containerURL,
 	}, nil
 }
 
 type Blob struct {
-	credential azblob.Credential
+	containerURL azblob.ContainerURL
 }
 
 // Statfs is called to obtain file system metadata.
@@ -98,6 +122,16 @@ func (fs *LightningFS) GenerateInode(parentInode uint64, name string) uint64 {
 //
 // The result may be cached for the duration set in Valid.
 func (b *Blob) Attr(ctx context.Context, a *fuse.Attr) error {
+	// func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
+	// 	if d.file == nil {
+	// 		// root directory
+	// 		a.Mode = os.ModeDir | 0755
+	// 		return nil
+	// 	}
+	// 	zipAttr(d.file, a)
+	// 	return nil
+	// }
+
 	return nil
 	// type Node interface {
 }

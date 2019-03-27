@@ -11,13 +11,19 @@ type Config struct {
 	AzureAccountName string `yaml:"accountName"`
 	AzureAccountKey  string `yaml:"accountKey"`
 	CachePath        string `yaml:"cachePath"`
+	ContainerName    string `yaml:"containerName"`
 }
 
 // NewConfig creates a new Config object.
-func NewConfig(accountName string, accountKey string, cachePath string) *Config {
+func NewConfig(
+	accountName string,
+	accountKey string,
+	containerName string,
+	cachePath string) *Config {
 	return &Config{
 		AzureAccountName: accountName,
 		AzureAccountKey:  accountKey,
+		ContainerName:    containerName,
 		CachePath:        cachePath,
 	}
 }
