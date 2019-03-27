@@ -23,7 +23,6 @@ var Command = cli.Command{
 	Usage:     "perform a mount",
 	ArgsUsage: "[mount]",
 	Flags: []cli.Flag{
-		// Build options
 		cli.BoolFlag{
 			Name:  "debug",
 			Usage: "Enable debug mode",
