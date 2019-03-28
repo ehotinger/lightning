@@ -125,7 +125,7 @@ func (fs *LightningFS) GenerateInode(parentInode uint64, name string) uint64 {
 // extra lookups and aliasing anomalies. This may not matter for a
 // simple, read-only filesystem.
 
-func GetMetadataWithDefaults(ctx context.Context, blockBlobURL azblob.BlockBlobURL) (azblob.Metadata, error) {
+func getMetadataWithDefaults(ctx context.Context, blockBlobURL azblob.BlockBlobURL) (azblob.Metadata, error) {
 	props, err := blockBlobURL.GetProperties(ctx, azblob.BlobAccessConditions{})
 	if err != nil {
 		return nil, err
@@ -133,6 +133,22 @@ func GetMetadataWithDefaults(ctx context.Context, blockBlobURL azblob.BlockBlobU
 
 	metadata := props.NewMetadata()
 	tryDefault(metadata, "size", "0")
+	// TODO:
+	// Valid time.Duration // how long Attr can be cached
+	// Inode     uint64      // inode number
+	// Size      uint64      // size in bytes
+	// Blocks    uint64      // size in 512-byte units
+	// Atime     time.Time   // time of last access
+	// Mtime     time.Time   // time of last modification
+	// Ctime     time.Time   // time of last inode change
+	// Crtime    time.Time   // time of creation (OS X only)
+	// Mode      os.FileMode // file mode
+	// Nlink     uint32      // number of links (usually 1)
+	// Uid       uint32      // owner uid
+	// Gid       uint32      // group gid
+	// Rdev      uint32      // device numbers
+	// Flags     uint32      // chflags(2) flags (OS X only)
+	// BlockSize uint32      // preferred blocksize for filesystem I/O
 	return metadata, nil
 }
 
@@ -143,8 +159,8 @@ func tryDefault(metadata azblob.Metadata, property string, value string) {
 	}
 }
 
-func BlobAttr(ctx context.Context, a *fuse.Attr, blockBlobURL azblob.BlockBlobURL) error {
-	metadata, err := GetMetadataWithDefaults(ctx, blockBlobURL)
+func blobAttr(ctx context.Context, a *fuse.Attr, blockBlobURL azblob.BlockBlobURL) error {
+	metadata, err := getMetadataWithDefaults(ctx, blockBlobURL)
 	if err != nil {
 		return err
 	}
@@ -177,17 +193,7 @@ func (b *DirBlob) Attr(ctx context.Context, a *fuse.Attr) error {
 		return nil
 	}
 
-	return BlobAttr(ctx, a, b.blockBlobURL)
-}
-
-// Getattr obtains the standard metadata for the receiver.
-// It should store that metadata in resp.
-//
-// If this method is not implemented, the attributes will be
-// generated based on Attr(), with zero values filled in.
-func (b *DirBlob) Getattr(ctx context.Context, req *fuse.GetattrRequest, resp *fuse.GetattrResponse) error {
-	// type NodeGetattrer interface {
-	return nil
+	return blobAttr(ctx, a, b.blockBlobURL)
 }
 
 // Setattr sets the standard metadata for the receiver.
@@ -201,6 +207,7 @@ func (b *DirBlob) Getattr(ctx context.Context, req *fuse.GetattrRequest, resp *f
 
 func (b *DirBlob) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
 	// type NodeSetattrer interface {
+	log.Println("DirBlob: SetAttr")
 	return nil
 }
 
@@ -209,6 +216,7 @@ func (b *DirBlob) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *f
 // TODO is the above true about directories?
 func (b *DirBlob) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (fuseFS.Node, error) {
 	// type NodeSymlinker interface {
+	log.Println("DirBlob: Symlink")
 	return nil, nil
 }
 
@@ -216,6 +224,7 @@ func (b *DirBlob) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (fuseFS
 // This optional request will be called only for symbolic link nodes.
 func (b *DirBlob) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (string, error) {
 	// type NodeReadlinker interface {
+	log.Println("DirBlob: Readlink")
 	return "", nil
 }
 
@@ -223,6 +232,7 @@ func (b *DirBlob) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (stri
 // existing Node. Receiver must be a directory.
 func (b *DirBlob) Link(ctx context.Context, req *fuse.LinkRequest, old fuseFS.Node) (fuseFS.Node, error) {
 	// type NodeLinker interface {
+	log.Println("DirBlob: Link")
 	return nil, nil
 }
 
@@ -231,6 +241,7 @@ func (b *DirBlob) Link(ctx context.Context, req *fuse.LinkRequest, old fuseFS.No
 // may correspond to a file (unlink) or to a directory (rmdir).
 func (b *DirBlob) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	// type NodeRemover interface {
+	log.Println("DirBlob: Remove")
 	return nil
 }
 
@@ -243,7 +254,7 @@ func (b *DirBlob) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 // implemented, the Node behaves as if it always returns nil
 // (permission granted), relying on checks in Open instead.
 func (b *DirBlob) Access(ctx context.Context, req *fuse.AccessRequest) error {
-	// type NodeAccesser interface {
+	log.Println("DirBlob: Access")
 	return nil
 }
 
@@ -255,6 +266,7 @@ func (b *DirBlob) Access(ctx context.Context, req *fuse.AccessRequest) error {
 // Lookup need not to handle the names "." and "..".
 func (b *DirBlob) Lookup(ctx context.Context, name string) (fuseFS.Node, error) {
 	// type NodeStringLookuper interface {
+	log.Println("DirBlob: Lookup")
 	return nil, nil
 }
 
@@ -275,6 +287,7 @@ func (b *DirBlob) Lookup(ctx context.Context, name string) (fuseFS.Node, error) 
 // XXX note about access.  XXX OpenFlags.
 func (b *DirBlob) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fuseFS.Handle, error) {
 	// type NodeOpener interface {
+	log.Println("DirBlob: Open")
 	return nil, nil
 }
 
@@ -282,6 +295,7 @@ func (b *DirBlob) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.Op
 // must be a directory.
 func (b *DirBlob) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fuseFS.Node, fuseFS.Handle, error) {
 	// type NodeCreater interface {
+	log.Println("DirBlob: Create")
 	return nil, nil, nil
 }
 
@@ -291,21 +305,25 @@ func (b *DirBlob) Create(ctx context.Context, req *fuse.CreateRequest, resp *fus
 // Forget is not necessarily seen on unmount, as all nodes are
 // implicitly forgotten as part part of the unmount.
 func (b *DirBlob) Forget() {
+	log.Println("DirBlob: Forget")
 	// type NodeForgetter interface {
 }
 
 func (b *DirBlob) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fuseFS.Node) error {
 	// NodeRenamer
+	log.Println("DirBlob: Rename")
 	return nil
 }
 
 func (b *DirBlob) Mknod(ctx context.Context, req *fuse.MknodRequest) (fuseFS.Node, error) {
 	// NodeMknoder
+	log.Println("DirBlob: Mknod")
 	return nil, nil
 }
 
 // TODO this should be on Handle not Node
 func (b *DirBlob) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+	log.Println("DirBlob: Fsync")
 	return nil
 }
 
@@ -315,18 +333,21 @@ func (b *DirBlob) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 // If there is no xattr by that name, returns fuse.ErrNoXattr.
 func (b *DirBlob) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, resp *fuse.GetxattrResponse) error {
 	// type NodeGetxattrer interface {
+	log.Println("DirBlob: Getxattr")
 	return nil
 }
 
 // Listxattr lists the extended attributes recorded for the node.
 func (b *DirBlob) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, resp *fuse.ListxattrResponse) error {
 	// NodeListxattrer
+	log.Println("DirBlob: Listxattr")
 	return nil
 }
 
 // Setxattr sets an extended attribute with the given name and
 // value for the node.
 func (b *DirBlob) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
+	log.Println("DirBlob: Setxattr")
 	return nil
 }
 
@@ -334,6 +355,7 @@ func (b *DirBlob) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error
 //
 // If there is no xattr by that name, returns fuse.ErrNoXattr.
 func (b *DirBlob) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
+	log.Println("DirBlob: Removexattr")
 	return nil
 }
 
@@ -373,6 +395,7 @@ type FileHandle struct{}
 // Note that reads beyond the size of the file as reported by Attr
 // are not even attempted (except in OpenDirectIO mode).
 func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadResponse) error {
+	log.Println("fh: Read")
 	return nil
 }
 
@@ -388,6 +411,7 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 // (as seen through Attr). Note that file size changes are
 // communicated also through Setattr.
 func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
+	log.Println("fh: Write")
 	return nil
 }
 

@@ -17,3 +17,8 @@ Don't use this repository yet. This is mostly a playground for experimentation. 
 ### azblob
 
 - API Docs: https://godoc.org/github.com/Azure/azure-storage-blob-go/azblob
+
+
+### Design
+
+- Consider implementing `Getattr` - if the method isn't implemented, the attributes are generated based on `Attr()` with zero values filled in. Perhaps we could do better caching with a custom implementation.
