@@ -8,13 +8,10 @@ import (
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
 	"github.com/ehotinger/lightningfs/config"
+	"github.com/ehotinger/lightningfs/defaults"
 	lightningFS "github.com/ehotinger/lightningfs/fs"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
-)
-
-const (
-	defaultMntPoint = "/mnt/lightning"
 )
 
 // Command performs a mount.
@@ -72,7 +69,7 @@ var Command = cli.Command{
 		}
 
 		if mntPoint == "" {
-			mntPoint = defaultMntPoint
+			mntPoint = defaults.MntPoint
 		}
 
 		if cfg.AzureAccountName == "" {

@@ -6,6 +6,7 @@ import (
 
 	blobCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/blob"
 	mountCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/mount"
+	umountCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/umount"
 	versionCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/version"
 	"github.com/ehotinger/lightningfs/version"
 	"github.com/urfave/cli"
@@ -28,6 +29,7 @@ func New() *cli.App {
 	app.Commands = []cli.Command{
 		blobCmd.Command,
 		mountCmd.Command,
+		umountCmd.Command,
 		versionCmd.Command,
 	}
 	return app
