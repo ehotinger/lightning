@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	blobCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/blob"
 	mountCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/mount"
 	versionCmd "github.com/ehotinger/lightningfs/cmd/lt/commands/version"
 	"github.com/ehotinger/lightningfs/version"
@@ -25,6 +26,7 @@ func New() *cli.App {
 	app.Usage = "Mount Azure blobs at lightning speed"
 	app.Version = version.Version
 	app.Commands = []cli.Command{
+		blobCmd.Command,
 		mountCmd.Command,
 		versionCmd.Command,
 	}

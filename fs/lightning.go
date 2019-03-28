@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
@@ -35,6 +36,7 @@ func NewLightningFS(config *config.Config) (*LightningFS, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	containerURL := azblob.NewContainerURL(*cURL, p)
 
 	return &LightningFS{
@@ -48,13 +50,28 @@ func NewLightningFS(config *config.Config) (*LightningFS, error) {
 
 // Root is called to obtain the Node for the file system root.
 func (fs *LightningFS) Root() (fuseFS.Node, error) {
-	return &Blob{
+	return &DirBlob{
 		containerURL: fs.containerURL,
 	}, nil
 }
 
-type Blob struct {
+type DirBlob struct {
+	name         string
 	containerURL azblob.ContainerURL
+	blockBlobURL azblob.BlockBlobURL
+}
+
+type FileBlob struct {
+	name         string
+	blockBlobURL azblob.BlockBlobURL
+}
+
+func SetAttrFromBlob(a *fuse.Attr) {
+	// a.Size = f.UncompressedSize64
+	// a.Mode = f.Mode()
+	// a.Mtime = f.ModTime()
+	// a.Ctime = f.ModTime()
+	// a.Crtime = f.ModTime()
 }
 
 // Statfs is called to obtain file system metadata.
@@ -121,19 +138,15 @@ func (fs *LightningFS) GenerateInode(parentInode uint64, name string) uint64 {
 // If Inode is left as 0, a dynamic inode number is chosen.
 //
 // The result may be cached for the duration set in Valid.
-func (b *Blob) Attr(ctx context.Context, a *fuse.Attr) error {
-	// func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
-	// 	if d.file == nil {
-	// 		// root directory
-	// 		a.Mode = os.ModeDir | 0755
-	// 		return nil
-	// 	}
-	// 	zipAttr(d.file, a)
-	// 	return nil
-	// }
+func (b *DirBlob) Attr(ctx context.Context, a *fuse.Attr) error {
+	// Root directory
+	if b.name == "" {
+		a.Mode = os.ModeDir | 0755
+		return nil
+	}
 
+	// TODO: blobAttr(b.blockBlobURL, a)
 	return nil
-	// type Node interface {
 }
 
 // Getattr obtains the standard metadata for the receiver.
@@ -141,7 +154,7 @@ func (b *Blob) Attr(ctx context.Context, a *fuse.Attr) error {
 //
 // If this method is not implemented, the attributes will be
 // generated based on Attr(), with zero values filled in.
-func (b *Blob) Getattr(ctx context.Context, req *fuse.GetattrRequest, resp *fuse.GetattrResponse) error {
+func (b *DirBlob) Getattr(ctx context.Context, req *fuse.GetattrRequest, resp *fuse.GetattrResponse) error {
 	// type NodeGetattrer interface {
 	return nil
 }
@@ -155,7 +168,7 @@ func (b *Blob) Getattr(ctx context.Context, req *fuse.GetattrRequest, resp *fuse
 // For example, the method should not change the mode of the file
 // unless req.Valid.Mode() is true.
 
-func (b *Blob) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
+func (b *DirBlob) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
 	// type NodeSetattrer interface {
 	return nil
 }
@@ -163,21 +176,21 @@ func (b *Blob) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse
 // Symlink creates a new symbolic link in the receiver, which must be a directory.
 //
 // TODO is the above true about directories?
-func (b *Blob) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (fuseFS.Node, error) {
+func (b *DirBlob) Symlink(ctx context.Context, req *fuse.SymlinkRequest) (fuseFS.Node, error) {
 	// type NodeSymlinker interface {
 	return nil, nil
 }
 
 // Readlink reads a symbolic link.
 // This optional request will be called only for symbolic link nodes.
-func (b *Blob) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (string, error) {
+func (b *DirBlob) Readlink(ctx context.Context, req *fuse.ReadlinkRequest) (string, error) {
 	// type NodeReadlinker interface {
 	return "", nil
 }
 
 // Link creates a new directory entry in the receiver based on an
 // existing Node. Receiver must be a directory.
-func (b *Blob) Link(ctx context.Context, req *fuse.LinkRequest, old fuseFS.Node) (fuseFS.Node, error) {
+func (b *DirBlob) Link(ctx context.Context, req *fuse.LinkRequest, old fuseFS.Node) (fuseFS.Node, error) {
 	// type NodeLinker interface {
 	return nil, nil
 }
@@ -185,7 +198,7 @@ func (b *Blob) Link(ctx context.Context, req *fuse.LinkRequest, old fuseFS.Node)
 // Remove removes the entry with the given name from
 // the receiver, which must be a directory.  The entry to be removed
 // may correspond to a file (unlink) or to a directory (rmdir).
-func (b *Blob) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
+func (b *DirBlob) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	// type NodeRemover interface {
 	return nil
 }
@@ -198,7 +211,7 @@ func (b *Blob) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 // call but not the open(2) system call. If Access is not
 // implemented, the Node behaves as if it always returns nil
 // (permission granted), relying on checks in Open instead.
-func (b *Blob) Access(ctx context.Context, req *fuse.AccessRequest) error {
+func (b *DirBlob) Access(ctx context.Context, req *fuse.AccessRequest) error {
 	// type NodeAccesser interface {
 	return nil
 }
@@ -209,7 +222,7 @@ func (b *Blob) Access(ctx context.Context, req *fuse.AccessRequest) error {
 // the directory, Lookup should return ENOENT.
 //
 // Lookup need not to handle the names "." and "..".
-func (b *Blob) Lookup(ctx context.Context, name string) (fuseFS.Node, error) {
+func (b *DirBlob) Lookup(ctx context.Context, name string) (fuseFS.Node, error) {
 	// type NodeStringLookuper interface {
 	return nil, nil
 }
@@ -229,14 +242,14 @@ func (b *Blob) Lookup(ctx context.Context, name string) (fuseFS.Node, error) {
 // succeed, and the Node itself will be used as the Handle.
 //
 // XXX note about access.  XXX OpenFlags.
-func (b *Blob) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fuseFS.Handle, error) {
+func (b *DirBlob) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fuseFS.Handle, error) {
 	// type NodeOpener interface {
 	return nil, nil
 }
 
 // Create creates a new directory entry in the receiver, which
 // must be a directory.
-func (b *Blob) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fuseFS.Node, fuseFS.Handle, error) {
+func (b *DirBlob) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fuseFS.Node, fuseFS.Handle, error) {
 	// type NodeCreater interface {
 	return nil, nil, nil
 }
@@ -246,22 +259,22 @@ func (b *Blob) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.C
 //
 // Forget is not necessarily seen on unmount, as all nodes are
 // implicitly forgotten as part part of the unmount.
-func (b *Blob) Forget() {
+func (b *DirBlob) Forget() {
 	// type NodeForgetter interface {
 }
 
-func (b *Blob) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fuseFS.Node) error {
+func (b *DirBlob) Rename(ctx context.Context, req *fuse.RenameRequest, newDir fuseFS.Node) error {
 	// NodeRenamer
 	return nil
 }
 
-func (b *Blob) Mknod(ctx context.Context, req *fuse.MknodRequest) (fuseFS.Node, error) {
+func (b *DirBlob) Mknod(ctx context.Context, req *fuse.MknodRequest) (fuseFS.Node, error) {
 	// NodeMknoder
 	return nil, nil
 }
 
 // TODO this should be on Handle not Node
-func (b *Blob) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
+func (b *DirBlob) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 	return nil
 }
 
@@ -269,27 +282,27 @@ func (b *Blob) Fsync(ctx context.Context, req *fuse.FsyncRequest) error {
 // node.
 //
 // If there is no xattr by that name, returns fuse.ErrNoXattr.
-func (b *Blob) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, resp *fuse.GetxattrResponse) error {
+func (b *DirBlob) Getxattr(ctx context.Context, req *fuse.GetxattrRequest, resp *fuse.GetxattrResponse) error {
 	// type NodeGetxattrer interface {
 	return nil
 }
 
 // Listxattr lists the extended attributes recorded for the node.
-func (b *Blob) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, resp *fuse.ListxattrResponse) error {
+func (b *DirBlob) Listxattr(ctx context.Context, req *fuse.ListxattrRequest, resp *fuse.ListxattrResponse) error {
 	// NodeListxattrer
 	return nil
 }
 
 // Setxattr sets an extended attribute with the given name and
 // value for the node.
-func (b *Blob) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
+func (b *DirBlob) Setxattr(ctx context.Context, req *fuse.SetxattrRequest) error {
 	return nil
 }
 
 // Removexattr removes an extended attribute for the name.
 //
 // If there is no xattr by that name, returns fuse.ErrNoXattr.
-func (b *Blob) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
+func (b *DirBlob) Removexattr(ctx context.Context, req *fuse.RemovexattrRequest) error {
 	return nil
 }
 
