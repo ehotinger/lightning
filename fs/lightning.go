@@ -3,8 +3,10 @@ package fs
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
+	"strconv"
 
 	"bazil.org/fuse"
 	fuseFS "bazil.org/fuse/fs"
@@ -15,6 +17,7 @@ import (
 
 const (
 	blobFmt = "https://%s.blob.core.windows.net/%s"
+	debug   = true // TODO: remove
 )
 
 type LightningFS struct {
@@ -62,16 +65,8 @@ type DirBlob struct {
 }
 
 type FileBlob struct {
-	name         string
-	blockBlobURL azblob.BlockBlobURL
-}
-
-func SetAttrFromBlob(a *fuse.Attr) {
-	// a.Size = f.UncompressedSize64
-	// a.Mode = f.Mode()
-	// a.Mtime = f.ModTime()
-	// a.Ctime = f.ModTime()
-	// a.Crtime = f.ModTime()
+	// name         string
+	// blockBlobURL azblob.BlockBlobURL
 }
 
 // Statfs is called to obtain file system metadata.
@@ -130,6 +125,43 @@ func (fs *LightningFS) GenerateInode(parentInode uint64, name string) uint64 {
 // extra lookups and aliasing anomalies. This may not matter for a
 // simple, read-only filesystem.
 
+func GetMetadataWithDefaults(ctx context.Context, blockBlobURL azblob.BlockBlobURL) (azblob.Metadata, error) {
+	props, err := blockBlobURL.GetProperties(ctx, azblob.BlobAccessConditions{})
+	if err != nil {
+		return nil, err
+	}
+
+	metadata := props.NewMetadata()
+	tryDefault(metadata, "size", "0")
+	return metadata, nil
+}
+
+// tryDefault defaults the specified property's value if it doesn't exist already.
+func tryDefault(metadata azblob.Metadata, property string, value string) {
+	if _, ok := metadata[property]; !ok {
+		metadata[property] = value
+	}
+}
+
+func BlobAttr(ctx context.Context, a *fuse.Attr, blockBlobURL azblob.BlockBlobURL) error {
+	metadata, err := GetMetadataWithDefaults(ctx, blockBlobURL)
+	if err != nil {
+		return err
+	}
+
+	size, err := strconv.ParseUint(metadata["size"], 10, 64)
+	if err != nil {
+		return err
+	}
+	a.Size = size
+
+	if debug {
+		log.Printf("attr of %v: %s\n", blockBlobURL.URL(), *a)
+	}
+
+	return nil
+}
+
 // Attr fills attr with the standard metadata for the node.
 //
 // Fields with reasonable defaults are prepopulated. For example,
@@ -145,8 +177,7 @@ func (b *DirBlob) Attr(ctx context.Context, a *fuse.Attr) error {
 		return nil
 	}
 
-	// TODO: blobAttr(b.blockBlobURL, a)
-	return nil
+	return BlobAttr(ctx, a, b.blockBlobURL)
 }
 
 // Getattr obtains the standard metadata for the receiver.

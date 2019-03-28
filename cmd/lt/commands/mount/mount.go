@@ -53,38 +53,32 @@ var Command = cli.Command{
 			mntPoint   = context.Args().First()
 			debug      = context.Bool("debug")
 			configFile = context.String("config-file")
-
-			accountName   string
-			accountKey    string
-			containerName string
-			cachePath     string
 		)
 
 		var cfg *config.Config
 		if configFile == "" {
+			accountName := context.String("account-name")
+			accountKey := context.String("account-key")
+			containerName := context.String("container-name")
+			cachePath := context.String("cache-path")
+			cfg = config.NewConfig(accountName, accountKey, containerName, cachePath)
+		} else {
+			log.Println("Loading configuration...")
 			var err error
 			cfg, err = config.NewConfigFromFile(configFile)
 			if err != nil {
 				return err
 			}
-		} else {
-			accountName = context.String("account-name")
-			accountKey = context.String("account-key")
-			containerName = context.String("container-name")
-			cachePath = context.String("cache-path")
-			cfg = config.NewConfig(accountName, accountKey, containerName, cachePath)
 		}
-
-		_ = cachePath // TODO: implement caching
 
 		if mntPoint == "" {
 			mntPoint = defaultMntPoint
 		}
 
-		if accountName == "" {
+		if cfg.AzureAccountName == "" {
 			return errors.New("account name is required")
 		}
-		if accountKey == "" {
+		if cfg.AzureAccountKey == "" {
 			return errors.New("account key is required")
 		}
 
