@@ -1,16 +1,17 @@
-# bazil.org/fuse v0.0.0-20180421153158-65cc252bf669
-bazil.org/fuse
-bazil.org/fuse/fs
-bazil.org/fuse/fuseutil
 # github.com/Azure/azure-pipeline-go v0.1.8
 github.com/Azure/azure-pipeline-go/pipeline
 # github.com/Azure/azure-storage-blob-go v0.0.0-20190123011202-457680cc0804
 github.com/Azure/azure-storage-blob-go/azblob
+# github.com/jacobsa/fuse v0.0.0-20180417054321-cd3959611bcb
+github.com/jacobsa/fuse
+github.com/jacobsa/fuse/fuseops
+github.com/jacobsa/fuse/fuseutil
+github.com/jacobsa/fuse/internal/buffer
+github.com/jacobsa/fuse/internal/freelist
+github.com/jacobsa/fuse/internal/fusekernel
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/urfave/cli v1.20.0
 github.com/urfave/cli
-# golang.org/x/net v0.0.0-20190326090315-15845e8f865b
-golang.org/x/net/context
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2

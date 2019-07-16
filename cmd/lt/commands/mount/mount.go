@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 
-	"bazil.org/fuse"
-	fuseFS "bazil.org/fuse/fs"
+	gocontext "context"
+
 	"github.com/ehotinger/lightningfs/config"
 	"github.com/ehotinger/lightningfs/defaults"
-	lightningFS "github.com/ehotinger/lightningfs/fs"
+	"github.com/ehotinger/lightningfs/fs"
+	"github.com/jacobsa/fuse"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -72,6 +74,8 @@ var Command = cli.Command{
 			mntPoint = defaults.MntPoint
 		}
 
+		fmt.Fprintf(os.Stdout, "Using %s as the mount point\n", mntPoint)
+
 		if cfg.AzureAccountName == "" {
 			return errors.New("account name is required")
 		}
@@ -79,32 +83,31 @@ var Command = cli.Command{
 			return errors.New("account key is required")
 		}
 
+		// TODO:
+		// Allow parallelism in the file system implementation
+		// to help flush out potential bugs.
+		runtime.GOMAXPROCS(2)
+		server, err := fs.NewLightningFS(cfg, 0, 0)
+		if err != nil {
+			log.Fatalf("failed to setup server: %v", err)
+		}
+		fuseCfg := &fuse.MountConfig{
+			ReadOnly: false,
+			FSName:   "lightningfs",
+		}
 		if debug {
-			fuse.Debug = func(msg interface{}) {
-				log.Println(msg)
-			}
+			fuseCfg.DebugLogger = log.New(os.Stdout, "DEBUG: ", 0)
 		}
 
-		ltFS, err := lightningFS.NewLightningFS(cfg)
+		mountedFS, err := fuse.Mount(mntPoint, server, fuseCfg)
 		if err != nil {
-			return err
+			log.Fatalf("failed to mount: %v", err)
 		}
 
-		fmt.Fprintf(os.Stdout, "Using %s as the mount point\n", mntPoint)
-
-		c, err := fuse.Mount(mntPoint, fuse.FSName("ltfs"), fuse.Subtype("ltfs"), fuse.ReadOnly())
-		if err != nil {
-			log.Fatalf("failed to perform fuse mount, err: %v", err)
-		}
-		defer c.Close()
-		defer fuse.Unmount(mntPoint)
-
-		err = fuseFS.Serve(c, ltFS)
-		if err != nil {
-			return err
+		if err = mountedFS.Join(gocontext.Background()); err != nil {
+			log.Fatalf("failed to unmount: %v", err)
 		}
 
-		<-c.Ready
-		return c.MountError
+		return nil
 	},
 }
