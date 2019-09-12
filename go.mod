@@ -8,6 +8,6 @@ require (
 	github.com/jacobsa/fuse v0.0.0-20180417054321-cd3959611bcb
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/urfave/cli v1.21.0
+	github.com/urfave/cli v1.22.0
 	gopkg.in/yaml.v2 v2.2.2
 )
